@@ -7,7 +7,7 @@ from datetime import datetime
 import altair as alt
 from dados import Dados_teste
 
-url = "http://localhost:3000/v1/rh_desligamento"
+url = "http://localhost:3000/v1/rh_desligamento/semtoken"
 
 response = requests.get(url)
 
@@ -224,16 +224,19 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
             df_des['sexo'] = df_des['sexo'].map({
                 'M': 'Masculino', 
                 'F': 'Feminino',
-                'N': 'Não Informado' # Caso exista 'N' ou outro código no seu banco
-            }).fillna('Não Cadastrado') # Se for nulo, vira "Não Cadastrado"
+                'N': 'Não Informado'
+            }).fillna('Não Cadastrado')
             
             fig_gen = px.pie(df_des, names='sexo', hole=0.6, color_discrete_sequence=["#36a2eb", "#FF00DD", "#ff3131", "#A0A0A0"])
             
-            # --- CORREÇÃO AQUI (Textos do Gráfico) ---
+            # --- CORREÇÃO AQUI (Textos e Mouse) ---
             fig_gen.update_traces(
                 textfont_size=18, 
-                textfont_color='white', # <--- Força a cor branca nos percentuais/labels
-                textinfo='percent' # Mostra o label e a porcentagem
+                textfont_color='white',
+                textinfo='percent', # O que fica escrito fixo no gráfico (só %)
+                
+                # ADICIONE ESTA LINHA ABAIXO:
+                hovertemplate='<b>%{label}</b>: %{value} Pessoas<extra></extra>' 
             )
 
             # --- CORREÇÃO AQUI (Legenda) ---
@@ -244,13 +247,13 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
                 legend=dict(
                     font=dict(
                         size=16, 
-                        color='white' # <--- Força a cor branca na legenda lateral
+                        color='white'
                     )
                 ),
                 margin=dict(l=0, r=0, t=30, b=0)
             )
             
-            st.plotly_chart(fig_gen, width='stretch')
+        st.plotly_chart(fig_gen, width='stretch')
 
     # --- COLUNA DO MEIO (A Linha Vertical) ---
     with c_div:

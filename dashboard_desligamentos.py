@@ -294,4 +294,5 @@ st.dataframe(
         'demissao': 'Data Demissão'
     }),
     width='stretch'
+
 )

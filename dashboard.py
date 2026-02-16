@@ -139,7 +139,8 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
     k3.metric("🔴 Desligamentos (Período)", f"{total_des}")
     k4.metric(f"📊 {nome_metrica} Médio (%)", f"{avg_metric:.2f}%")
 
-    # --- LÓGICA DINÂMICA DE ANOS ---
+# --- LÓGICA DINÂMICA DE ANOS ---
+# --- LÓGICA DINÂMICA DE ANOS ---
     ano_atual = datetime.now().year
     ano_anterior = ano_atual - 1
     ano_retrasado = ano_atual - 2
@@ -151,22 +152,33 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
     with col_graf:
         setores = ["Administrativo", "Comercial", "Operacional"]
         data_metas = []
+        
+        # Dicionário auxiliar para guardar o valor atual (2026) para usar no texto depois
+        valores_atuais = {}
+
         for s in setores:
             df_s = df_filtered[df_filtered['nomdep'].str.contains(s, na=False, case=False)]
             
-            # Cálculo dinâmico para o ano retrasado (Ex: 2024 se hoje for 2026)
+            # 1. Histórico para o GRÁFICO (2024 e 2025)
             v_retrasado = get_metrics(df_s, pd.to_datetime(f"{ano_retrasado}-01-01"), pd.to_datetime(f"{ano_retrasado}-12-31"))
             v_retrasado = v_retrasado[coluna_ativa].mean() if not v_retrasado.empty else 0
             
-            # Cálculo dinâmico para o ano anterior (Ex: 2025 se hoje for 2026)
             v_anterior = get_metrics(df_s, pd.to_datetime(f"{ano_anterior}-01-01"), pd.to_datetime(f"{ano_anterior}-12-31"))
             v_anterior = v_anterior[coluna_ativa].mean() if not v_anterior.empty else 0
 
+            # 2. Cálculo do ANO ATUAL (2026) apenas para o TEXTO
+            v_atual = get_metrics(df_s, pd.to_datetime(f"{ano_atual}-01-01"), pd.to_datetime(f"{ano_atual}-12-31"))
+            valor_2026 = v_atual[coluna_ativa].mean() if not v_atual.empty else 0
+            
+            # Guarda o valor de 2026 no dicionário
+            valores_atuais[s] = valor_2026
+
+            # Monta os dados do gráfico (Mantendo apenas histórico e Meta)
             data_metas.append({"Setor": s, "Ano": str(ano_retrasado), "Valor": round(v_retrasado, 1)})
             data_metas.append({"Setor": s, "Ano": str(ano_anterior), "Valor": round(v_anterior, 1)})
             data_metas.append({"Setor": s, "Ano": f"Meta {ano_atual}", "Valor": 5.0})
 
-        # Cores dinâmicas
+        # Cores (Mantém visual original)
         cores_map = {
             str(ano_retrasado): "#4A708B", 
             str(ano_anterior): "#36a2eb", 
@@ -181,32 +193,79 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
     with col_txt:
         st.markdown("<br>", unsafe_allow_html=True)
         for s in setores:
-            # Busca o valor do ano anterior dinamicamente
-            val_anterior = next((x['Valor'] for x in data_metas if x['Setor'] == s and x['Ano'] == str(ano_anterior)), 0)
-            dist = val_anterior - 5.0
+            # 3. Usa o valor de 2026 que calculamos e guardamos no dicionário
+            val_atual = valores_atuais.get(s, 0)
+            
+            dist = val_atual - 5.0
             cor = "#2ecc71" if dist <= 0 else "#e74c3c"
+            
             st.markdown(f"""
                 <div class="linha-meta">
                     <span style="color:#B0C4DE; font-size:14px;">{s}</span>
-                    <span style="font-weight:bold; color:white;">5.0%</span>
+                    <span style="font-weight:bold; color:white;">Meta: 5.0%</span>
                 </div>
-                <div style="color:{cor}; font-size:12px; font-weight:bold; margin-top:-10px; margin-bottom:15px;">
-                    Distância da Meta: {dist:+.2f} pp | <br>     Valor {ano_anterior}: {val_anterior:.1f}%
+                <div style="color:{cor}; font-size:16px; font-weight:bold; margin-top:-10px; margin-bottom:15px;">
+                    Distância: {dist:+.2f} pp | <br> Realizado {ano_atual}: {val_atual:.1f}%
                 </div>
             """, unsafe_allow_html=True)
 
     st.divider()
 
-    c1, c2 = st.columns(2)
+
+    # 1. Cria 3 colunas: [Gráfico 1] [Linha Fina] [Gráfico 2]
+    c1, c_div, c2 = st.columns([1, 0.1, 1]) 
+
+    # --- COLUNA DA ESQUERDA (Gênero) ---
     with c1:
         st.markdown("### 🚻 Proporção por Gênero")
         df_des = df_filtered[df_filtered['demissao'].notna()].copy()
         if not df_des.empty:
-            df_des['sexo'] = df_des['sexo'].map({'M': 'Masculino', 'F': 'Feminino'}).fillna(df_des['sexo'])
-            fig_gen = px.pie(df_des, names='sexo', hole=0.6, color_discrete_sequence=["#36a2eb", "#FF00DD", "#ffe600"])
-            fig_gen.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', height=350)
+            # Mapeia para nomes mais amigáveis
+            df_des['sexo'] = df_des['sexo'].map({
+                'M': 'Masculino', 
+                'F': 'Feminino',
+                'N': 'Não Informado' # Caso exista 'N' ou outro código no seu banco
+            }).fillna('Não Cadastrado') # Se for nulo, vira "Não Cadastrado"
+            
+            fig_gen = px.pie(df_des, names='sexo', hole=0.6, color_discrete_sequence=["#36a2eb", "#FF00DD", "#ff3131", "#A0A0A0"])
+            
+            # --- CORREÇÃO AQUI (Textos do Gráfico) ---
+            fig_gen.update_traces(
+                textfont_size=18, 
+                textfont_color='white', # <--- Força a cor branca nos percentuais/labels
+                textinfo='percent' # Mostra o label e a porcentagem
+            )
+
+            # --- CORREÇÃO AQUI (Legenda) ---
+            fig_gen.update_layout(
+                template="plotly_dark", 
+                paper_bgcolor='rgba(0,0,0,0)', 
+                height=350,
+                legend=dict(
+                    font=dict(
+                        size=16, 
+                        color='white' # <--- Força a cor branca na legenda lateral
+                    )
+                ),
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+            
             st.plotly_chart(fig_gen, width='stretch')
 
+    # --- COLUNA DO MEIO (A Linha Vertical) ---
+    with c_div:
+        st.markdown("""
+            <style>
+                .vertical-line {
+                    border-left: 1px solid rgba(255, 255, 255, 0.2);
+                    height: 350px;
+                    margin: auto;
+                }
+            </style>
+            <div class="vertical-line"></div>
+        """, unsafe_allow_html=True)
+
+    # --- COLUNA DA DIREITA (Tempo de Casa) ---
     with c2:
         st.markdown("### ⏳ Turnover por Tempo de Empresa")
         if not df_des.empty:
@@ -215,10 +274,19 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
             df_des['Faixa'] = pd.cut(df_des['dias'], bins=[0, 180, 365, 730, 99999], labels=['0-6m', '6-12m', '1-2a', '2a+'])
             counts = df_des['Faixa'].value_counts().reindex(['0-6m', '6-12m', '1-2a', '2a+'], fill_value=0).reset_index()
             counts.columns = ['Faixa', 'count']
-            # Alterna entre azul e laranja
+            
             cores_alternadas = ['#36a2eb', '#f39c12', '#36a2eb', '#f39c12']
             fig_faixa = px.bar(counts, x='count', y='Faixa', orientation='h', color='Faixa', color_discrete_sequence=cores_alternadas)
-            fig_faixa.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', height=350, showlegend=False)
+            
+            fig_faixa.update_layout(
+                template="plotly_dark", 
+                paper_bgcolor='rgba(0,0,0,0)', 
+                height=350, 
+                showlegend=False,
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+            fig_faixa.update_yaxes(tickfont=dict(size=18)) 
+            
             st.plotly_chart(fig_faixa, width='stretch')
 
     st.divider()
@@ -294,5 +362,4 @@ st.dataframe(
         'demissao': 'Data Demissão'
     }),
     width='stretch'
-
 )

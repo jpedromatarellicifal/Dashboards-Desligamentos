@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  dashboards-desligamentos:
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: unless-stopped
+    expose:
+      - "8501"

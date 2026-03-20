@@ -6,5 +6,7 @@ services:
       context: .
       dockerfile: dockerfile
     restart: unless-stopped
+    ports:
+      - "8096:8501"
     expose:
       - "8501"

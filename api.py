@@ -6,17 +6,23 @@ import plotly.express as px
 from datetime import datetime
 import altair as alt
 import urllib3 # 👈 Adicione isso
+from streamlit.errors import StreamlitAPIException
 
 # 👈 Adicione isso para limpar o terminal de avisos chatos do SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # 1. Configuração da página DEVE ser o primeiro comando Streamlit no arquivo
-st.set_page_config(
-    page_title="Dashboard RH - Turnover",
-    page_icon="👥",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+try:
+    st.set_page_config(
+        page_title="Dashboard RH - Turnover",
+        page_icon="👥",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+except StreamlitAPIException:
+    # Em apps multipage, o arquivo da página pode ser carregado mais de uma vez
+    # pelo runner. Se o config já foi definido, ignoramos o segundo chamado.
+    pass
 
 
 # 2. Verifica se o token existe na sessão (se o usuário passou pelo login)
@@ -58,9 +64,10 @@ except requests.exceptions.RequestException as e:
 # --- DAQUI PARA BAIXO O SEU CÓDIGO CONTINUA IGUAL ---
 
 for pessoa in Dados_teste:
-    if pessoa.get("gender") == 1:
+    g = pessoa.get("gender")
+    if g in (1, "1", 1.0):
         pessoa["gender"] = "M"
-    elif pessoa.get("gender") == 2:
+    elif g in (2, "2", 2.0):
         pessoa["gender"] = "F"
 
 for pessoa in Dados_teste:
@@ -131,13 +138,16 @@ with st.sidebar:
     st.header("🔍 Filtros de Cadastro")
     
     # Filtros de Dados
-    empresa_sel = st.selectbox("Empresa", ["Todas"] + sorted(df_raw["registrationCompany"].dropna().unique().tolist()))
-    cidade_sel = st.selectbox("Cidade", ["Todas"] + sorted(df_raw["cityName"].dropna().unique().tolist()))
-    depto_sel = st.selectbox("Departamento", ["Todos"] + sorted(df_raw["departmentName"].dropna().unique().tolist()))
-    sexo_sel = st.selectbox("Gênero", ["Todos"] + sorted(df_raw["gender"].dropna().unique().tolist()))
-    gerente_sel = st.selectbox("Gerente", ["Todos"] + sorted(df_raw["managerName"].dropna().unique().tolist()))
-    cc_sel = st.selectbox("Centro de Custo", ["Todos"] + sorted(df_raw["expenseSector"].dropna().unique().tolist()))
-    cargo_sel = st.selectbox("Cargo", ["Todos"] + sorted(df_raw["positionTitle"].dropna().unique().tolist()))
+    def _opts_ordenadas(serie):
+        return sorted(serie.dropna().unique().tolist(), key=str)
+
+    empresa_sel = st.selectbox("Empresa", ["Todas"] + _opts_ordenadas(df_raw["registrationCompany"]))
+    cidade_sel = st.selectbox("Cidade", ["Todas"] + _opts_ordenadas(df_raw["cityName"]))
+    depto_sel = st.selectbox("Departamento", ["Todos"] + _opts_ordenadas(df_raw["departmentName"]))
+    sexo_sel = st.selectbox("Gênero", ["Todos"] + _opts_ordenadas(df_raw["gender"]))
+    gerente_sel = st.selectbox("Gerente", ["Todos"] + _opts_ordenadas(df_raw["managerName"]))
+    cc_sel = st.selectbox("Centro de Custo", ["Todos"] + _opts_ordenadas(df_raw["expenseSector"]))
+    cargo_sel = st.selectbox("Cargo", ["Todos"] + _opts_ordenadas(df_raw["positionTitle"]))
     
     st.caption("Versão 2.1.2026 - Dashboard Integrado")
 # --- FIM DA SIDEBAR ---

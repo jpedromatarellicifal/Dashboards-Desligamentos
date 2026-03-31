@@ -244,7 +244,7 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
         fig_metas = px.bar(pd.DataFrame(data_metas), x="Setor", y="Valor", color="Ano", barmode="group", text="Valor",
                            color_discrete_map=cores_map)
         fig_metas.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=380, margin=dict(t=10))
-        st.plotly_chart(fig_metas, width='stretch')
+        st.plotly_chart(fig_metas, use_container_width=True)
 
     with col_txt:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -313,7 +313,7 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
             )
             
             # MOVIDO PARA DENTRO DO IF:
-            st.plotly_chart(fig_gen, width='stretch')
+            st.plotly_chart(fig_gen, use_container_width=True)
         else:
             # Feedback visual caso não haja dados
             st.info("Sem registros de desligamento para os filtros selecionados.")
@@ -353,12 +353,12 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
             )
             fig_faixa.update_yaxes(tickfont=dict(size=18)) 
             
-            st.plotly_chart(fig_faixa, width='stretch')
+            st.plotly_chart(fig_faixa, use_container_width=True)
 
     st.divider()
 
     st.markdown("### 📋 Detalhamento Mensal")
-    st.dataframe(df_dash.sort_values(by="Data", ascending=False), width='stretch', hide_index=True,
+    st.dataframe(df_dash.sort_values(by="Data", ascending=False), use_container_width=True, hide_index=True,
                  column_order=("Mês", "Headcount", "Desligamentos", coluna_ativa, "Meta"),
                  column_config={coluna_ativa: st.column_config.ProgressColumn(f"{nome_metrica} (%)", format="%.2f%%", min_value=0, max_value=15)})
 
@@ -366,7 +366,7 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
 
     st.subheader("📈 Evolução do Headcount")
     fig_hc = px.line(df_dash, x='Mês', y='Headcount', markers=True, template="plotly_dark")
-    st.plotly_chart(fig_hc, width='stretch')
+    st.plotly_chart(fig_hc, use_container_width=True)
 
     st.subheader("📊 Comparativo de Admissões vs Desligamentos")
     adm_mes_list = []
@@ -380,7 +380,7 @@ if opcao_painel in ["Turnover", "Taxa de Desligamento"]:
         go.Bar(name='Desligamentos', x=df_dash['Mês'], y=df_dash['Desligamentos'], marker_color='#e74c3c')
     ])
     fig_comp.update_layout(barmode='group', template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
-    st.plotly_chart(fig_comp, width='stretch')
+    st.plotly_chart(fig_comp, use_container_width=True)
 
 elif opcao_painel == "Detalhamento por Ano":
     st.title("📅 Detalhamento por Ano")
@@ -395,37 +395,62 @@ elif opcao_painel == "Detalhamento por Ano":
         chart = alt.Chart(df_ano_plot).mark_bar().encode(
             x="Mes:O", y="value:Q", color=alt.Color("variable:N", scale=alt.Scale(range=["#2ecc71", "#e74c3c"])), xOffset="variable:N"
         ).properties(height=300)
-        st.altair_chart(chart, width='stretch')
+        st.altair_chart(chart, use_container_width=True)
 
 st.markdown("### 👥 Lista de Colaboradores")
 
 
-# 1. Cria a cópia de visualização
-df_view = df_filtered[['employeeName','registrationCompany', 'cityName', 'departmentName', 'positionTitle','managerName', 'expenseSector', 'admission', 'resignation']].copy()
+cols_tab = [
+    "employeeName",
+    "registrationCompany",
+    "cityName",
+    "departmentName",
+    "positionTitle",
+    "managerName",
+    "expenseSector",
+    "admission",
+    "resignation",
+]
+df_view = df_filtered[cols_tab].copy()
 
-# 2. Formata as datas para texto (DD/MM/AAAA)
-df_view['admission'] = df_view['admission'].dt.strftime('%d/%m/%Y')
-df_view['resignation'] = df_view['resignation'].dt.strftime('%d/%m/%Y')
+text_cols = [
+    "employeeName",
+    "registrationCompany",
+    "cityName",
+    "departmentName",
+    "positionTitle",
+    "managerName",
+    "expenseSector",
+]
+df_view[text_cols] = df_view[text_cols].fillna("Não cadastrado").replace("None", "Não cadastrado")
 
-# 3. REGRA ESPECÍFICA: Na coluna 'demissao', nulo vira VAZIO
-df_view['resignation'] = df_view['resignation'].fillna('').replace('None', '')
+df_view["admission"] = pd.to_datetime(df_view["admission"], errors="coerce")
+df_view["resignation"] = pd.to_datetime(df_view["resignation"], errors="coerce")
 
-# 4. REGRA GERAL: Nos outros campos, nulo vira "Não cadastrado"
-# (Como já tratamos a demissão acima, ela não será afetada por essa linha)
-df_view = df_view.fillna('Não cadastrado').replace('None', 'Não cadastrado')
+rename_map = {
+    "employeeName": "Funcionário",
+    "registrationCompany": "Empresa Registro",
+    "cityName": "Cidade",
+    "departmentName": "Departamento",
+    "positionTitle": "Cargo",
+    "managerName": "Gerente",
+    "expenseSector": "Centro de Custo",
+    "admission": "Data Admissão",
+    "resignation": "Data Demissão",
+}
+df_show = df_view.rename(columns=rename_map)
 
-# 5. Exibe
 st.dataframe(
-    df_view.rename(columns={
-        'employeeName': 'Funcionário',
-        'registrationCompany': 'Empresa Registro',
-        'cityName': 'Cidade',
-        'departmentName': 'Departamento',
-        'positionTitle': 'Cargo',
-        'managerName': 'Gerente',
-        'expenseSector': 'Centro de Custo',
-        'admission': 'Data Admissão',
-        'resignation': 'Data Demissão'
-    }),
-    width='stretch'
+    df_show,
+    column_config={
+        "Data Admissão": st.column_config.DateColumn(
+            "Data Admissão",
+            format="DD/MM/YYYY",
+        ),
+        "Data Demissão": st.column_config.DateColumn(
+            "Data Demissão",
+            format="DD/MM/YYYY",
+        ),
+    },
+    use_container_width=True,
 )

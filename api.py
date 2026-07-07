@@ -37,7 +37,9 @@ token_usuario = st.session_state["token"]
 url = "https://apis.glorysoft.com.br/people/Turnover"
 headers = {
     "Authorization": f"Bearer {token_usuario}", # ✅ O nome correto é Authorization
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Ocp-Apim-Subscription-Key": "5c2f9da58c714cc8be25c30ecd46f8dc",
+    "X-Platform": "web"
 }
 
 # 4. Faz a requisição passando os headers

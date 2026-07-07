@@ -22,9 +22,14 @@ with st.form("form_login"):
 if submit:
     # Substitua pela sua URL de login
     url_api = "https://apis.glorysoft.com.br/auth/auth" 
+    headers = {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": "5c2f9da58c714cc8be25c30ecd46f8dc",
+        "X-Platform": "web"
+    }
     payload = {"email": usuario_input, "password": senha_input}
     try:
-        response = requests.post(url_api, json=payload)
+        response = requests.post(url_api, json=payload, headers=headers)
         
         if response.status_code == 200:
 

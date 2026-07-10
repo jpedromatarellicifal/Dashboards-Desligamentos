@@ -145,7 +145,8 @@ if cc_sel != "Todos": df_filtered = df_filtered[df_filtered["expenseSector"] == 
 if cargo_sel != "Todos": df_filtered = df_filtered[df_filtered["positionTitle"] == cargo_sel]
 
 def get_metrics(df_in, s_date, e_date):
-    if df_in.empty: return pd.DataFrame()
+    if df_in.empty: 
+        return pd.DataFrame(columns=['Data', 'Mês', 'Headcount', 'Desligamentos', 'Turnover Tradicional %', 'Taxa Desligamento (Média) %', 'Meta'])
     dates = pd.date_range(start=s_date, end=e_date, freq='MS')
     res = []
     for d in dates:

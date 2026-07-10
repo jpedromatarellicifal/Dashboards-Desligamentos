@@ -43,8 +43,8 @@ if submit:
             st.session_state["autenticado"] = True
             st.session_state["token"] = token_recebido # Salva o token real
             
-            # Força o recarregamento. O main.py vai assumir e trocar para api.py
-            st.rerun()
+            # Muda para a página principal usando switch_page ao invés de rerun
+            st.switch_page("api.py")
         else:
             st.error("Usuário ou senha incorretos.")
             

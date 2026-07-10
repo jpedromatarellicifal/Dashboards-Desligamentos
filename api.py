@@ -135,7 +135,7 @@ with st.sidebar:
 # --- FIM DA SIDEBAR ---
 
 # Aplicação dos filtros no DataFrame
-df_filtered = df_raw.copy()
+df_filtered = df_raw
 if empresa_sel != "Todas": df_filtered = df_filtered[df_filtered["registrationCompany"] == empresa_sel]
 if cidade_sel != "Todas": df_filtered = df_filtered[df_filtered["cityName"] == cidade_sel]
 if depto_sel != "Todos": df_filtered = df_filtered[df_filtered["departmentName"] == depto_sel]

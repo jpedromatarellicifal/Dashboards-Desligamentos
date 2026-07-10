@@ -6,18 +6,13 @@ import plotly.express as px
 from datetime import datetime
 import altair as alt
 import urllib3
-from extra_streamlit_components import CookieManager
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Tenta restaurar o token do cookie caso o session_state tenha sido perdido
+# Verifica se o token existe na sessão (se o usuário passou pelo login)
 if "token" not in st.session_state or not st.session_state["token"]:
-    token_salvo = CookieManager(key="api_cookie_manager").get("dashboard_token")
-    if token_salvo:
-        st.session_state["token"] = token_salvo
-    else:
-        st.error("Acesso negado: Usuário não autenticado. Por favor, volte e faça o login.")
-        st.stop()
+    st.error("Acesso negado: Usuário não autenticado. Por favor, volte e faça o login.")
+    st.stop()
 
 token_usuario = st.session_state["token"]
 

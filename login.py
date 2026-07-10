@@ -1,8 +1,5 @@
 import streamlit as st
 import requests
-from extra_streamlit_components import CookieManager
-
-cookie_manager = CookieManager(key="login_cookie_manager")
 
 st.title("Acesso ao Sistema")
 st.write("Por favor, insira suas credenciais.")
@@ -45,9 +42,6 @@ if submit:
             # Salva os dados na sessão
             st.session_state["autenticado"] = True
             st.session_state["token"] = token_recebido # Salva o token real
-
-            # Salva o token em cookie para persistir entre recarregamentos/redeploys
-            cookie_manager.set("dashboard_token", token_recebido)
             
             # Força o recarregamento. O main.py vai assumir e trocar para api.py
             st.rerun()

@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
+    image: dashboards-desligamentos-app:v2
     restart: unless-stopped
     expose:
       - "8501"
@@ -15,6 +16,7 @@ services:
     build:
       context: .
       dockerfile: nginx.Dockerfile
+    image: dashboards-desligamentos-nginx:v2
     restart: unless-stopped
     ports:
       - "8096:80"

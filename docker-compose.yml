@@ -9,7 +9,7 @@ services:
     expose:
       - "8501"
     ports:
-      - "8097:8501"
+      - "8099:8501"
     networks:
       - default
 

@@ -23,13 +23,14 @@ if "token" not in st.session_state:
     st.session_state["token"] = None
 
 # Define os arquivos como páginas do Streamlit
-pagina_login = st.Page("login.py", title="Login", icon="🔒")
+pagina_login = st.Page("login.py", title="Login", icon="🔒", default=True)
 pagina_dashboard = st.Page("api.py", title="Dashboard", icon="📊")
 
-# Lógica de Roteamento Estrito (Bloqueia a navegação livre)
-if st.session_state["autenticado"]:
-    pg = st.navigation([pagina_dashboard])
-else:
-    pg = st.navigation([pagina_login])
+# Usa a navegação estática oculta para evitar bugs de roteamento e recarregamento
+pg = st.navigation([pagina_login, pagina_dashboard], position="hidden")
+
+# Se não estiver logado e tentar acessar o dashboard, redireciona pro login
+if not st.session_state["autenticado"] and pg.title == "Dashboard":
+    st.switch_page("login.py")
 
 pg.run()

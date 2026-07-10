@@ -1,10 +1,12 @@
 import streamlit as st
+from extra_streamlit_components import CookieManager
 
-# Inicializa as variáveis na sessão global
-if "autenticado" not in st.session_state:
-    st.session_state["autenticado"] = False
-if "token" not in st.session_state:
-    st.session_state["token"] = None
+st.set_page_config(
+    page_title="Dashboard RH - Turnover",
+    page_icon="👥",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 st.markdown("""
     <style>
@@ -15,6 +17,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Inicializa as variáveis na sessão global
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+if "token" not in st.session_state:
+    st.session_state["token"] = None
+
+# Tenta restaurar o login a partir do cookie, caso a sessão tenha sido perdida
+cookie_manager = CookieManager()
+if not st.session_state["autenticado"]:
+    token_salvo = cookie_manager.get("dashboard_token")
+    if token_salvo:
+        st.session_state["autenticado"] = True
+        st.session_state["token"] = token_salvo
 
 # Define os arquivos como páginas do Streamlit
 pagina_login = st.Page("login.py", title="Login", icon="🔒")
@@ -22,11 +37,8 @@ pagina_dashboard = st.Page("api.py", title="Dashboard", icon="📊")
 
 # Lógica de Roteamento Estrito (Bloqueia a navegação livre)
 if st.session_state["autenticado"]:
-    # Se estiver logado, o Streamlit SÓ conhece a página do dashboard
     pg = st.navigation([pagina_dashboard])
 else:
-    # Se NÃO estiver logado, o Streamlit SÓ conhece a página de login
     pg = st.navigation([pagina_login])
 
-# Executa a página selecionada
 pg.run()

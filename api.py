@@ -5,59 +5,44 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
 import altair as alt
-import urllib3 # 👈 Adicione isso
-from streamlit.errors import StreamlitAPIException
+import urllib3
+from extra_streamlit_components import CookieManager
 
-# 👈 Adicione isso para limpar o terminal de avisos chatos do SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 1. Configuração da página DEVE ser o primeiro comando Streamlit no arquivo
-try:
-    st.set_page_config(
-        page_title="Dashboard RH - Turnover",
-        page_icon="👥",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-except StreamlitAPIException:
-    # Em apps multipage, o arquivo da página pode ser carregado mais de uma vez
-    # pelo runner. Se o config já foi definido, ignoramos o segundo chamado.
-    pass
-
-
-# 2. Verifica se o token existe na sessão (se o usuário passou pelo login)
+# Tenta restaurar o token do cookie caso o session_state tenha sido perdido
 if "token" not in st.session_state or not st.session_state["token"]:
-    st.error("Acesso negado: Usuário não autenticado. Por favor, volte e faça o login.")
-    st.stop() # Interrompe o carregamento da tela aqui se não tiver token
+    token_salvo = CookieManager().get("dashboard_token")
+    if token_salvo:
+        st.session_state["token"] = token_salvo
+    else:
+        st.error("Acesso negado: Usuário não autenticado. Por favor, volte e faça o login.")
+        st.stop()
 
-# Resgata o token
 token_usuario = st.session_state["token"]
 
-# 3. Configura o cabeçalho (Header) com o Bearer Token
-url = "https://apis.glorysoft.com.br/people/Turnover"
-headers = {
-    "Authorization": f"Bearer {token_usuario}", # ✅ O nome correto é Authorization
-    "Content-Type": "application/json",
-    "Ocp-Apim-Subscription-Key": "5c2f9da58c714cc8be25c30ecd46f8dc",
-    "X-Platform": "web"
-}
 
-# 4. Faz a requisição passando os headers
-# 4. Faz a requisição passando os headers e ignorando o SSL local
+@st.cache_data(show_spinner="Carregando dados do turnover...", ttl=600)
+def carregar_dados_turnover(token):
+    url = "https://apis.glorysoft.com.br/people/Turnover"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": "5c2f9da58c714cc8be25c30ecd46f8dc",
+        "X-Platform": "web"
+    }
+    response = requests.get(url, headers=headers, verify=False)
+    if response.status_code == 401:
+        raise PermissionError("Sessão expirou ou token inválido.")
+    response.raise_for_status()
+    return response.json()
+
+
 try:
-    # 🚀 CORREÇÃO AQUI: Adicionado verify=False
-    response = requests.get(url, headers=headers, verify=False) 
-    
-    if response.status_code == 200:
-        Dados_teste = response.json()
-# ... o resto continua igual ...
-    elif response.status_code == 401:
-        st.error("Sua sessão expirou ou o token é inválido (Erro 401). Faça login novamente.")
-        st.stop()
-    else:
-        st.error(f"Erro na API ao buscar dados: {response.status_code}")
-        st.stop()
-        
+    Dados_teste = carregar_dados_turnover(token_usuario)
+except PermissionError as err:
+    st.error(str(err))
+    st.stop()
 except requests.exceptions.RequestException as e:
     st.error(f"Falha de conexão com a API: {e}")
     st.stop()

@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from extra_streamlit_components import CookieManager
 
-cookie_manager = CookieManager()
+cookie_manager = CookieManager(key="login_cookie_manager")
 
 st.title("Acesso ao Sistema")
 st.write("Por favor, insira suas credenciais.")

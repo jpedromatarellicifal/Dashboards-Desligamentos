@@ -12,7 +12,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Tenta restaurar o token do cookie caso o session_state tenha sido perdido
 if "token" not in st.session_state or not st.session_state["token"]:
-    token_salvo = CookieManager().get("dashboard_token")
+    token_salvo = CookieManager(key="api_cookie_manager").get("dashboard_token")
     if token_salvo:
         st.session_state["token"] = token_salvo
     else:

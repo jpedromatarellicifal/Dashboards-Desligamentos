@@ -24,7 +24,7 @@ if "token" not in st.session_state:
     st.session_state["token"] = None
 
 # Tenta restaurar o login a partir do cookie, caso a sessão tenha sido perdida
-cookie_manager = CookieManager()
+cookie_manager = CookieManager(key="main_cookie_manager")
 if not st.session_state["autenticado"]:
     token_salvo = cookie_manager.get("dashboard_token")
     if token_salvo:

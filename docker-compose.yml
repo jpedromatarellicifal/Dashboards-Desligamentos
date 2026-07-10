@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     expose:
       - "8501"
+    ports:
+      - "8097:8501"
     networks:
       - default
 

@@ -4,6 +4,12 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Previne Segmentation Fault no Numpy/Pandas limitando threads em C
+ENV OPENBLAS_NUM_THREADS=1
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV NUMEXPR_NUM_THREADS=1
+
 WORKDIR /app
 
 # dependências do sistema (boa prática pro pandas/plotly)
@@ -22,4 +28,12 @@ COPY . .
 
 EXPOSE 8501
 
-CMD ["sh", "-c", "streamlit run main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.enableCORS=false --server.enableXsrfProtection=false --server.enableWebsocketCompression=false --server.fileWatcherType=none --browser.gatherUsageStats=false"]
+CMD ["streamlit", "run", "main.py", \
+    "--server.port=8501", \
+    "--server.address=0.0.0.0", \
+    "--server.headless=true", \
+    "--server.enableCORS=false", \
+    "--server.enableXsrfProtection=false", \
+    "--server.enableWebsocketCompression=false", \
+    "--server.fileWatcherType=none", \
+    "--browser.gatherUsageStats=false"]

@@ -29,4 +29,5 @@ CMD ["streamlit", "run", "main.py", \
     "--server.enableCORS=false", \
     "--server.enableXsrfProtection=false", \
     "--server.enableWebsocketCompression=false", \
+    "--server.fileWatcherType=none", \
     "--browser.gatherUsageStats=false"]
